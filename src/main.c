@@ -13,7 +13,7 @@ void *tick_function(void *vargrp)
     uint64_t n_of_ticks = 0;
     while (1)
     {
-        usleep(100000);
+        usleep(50000);
         tick(clock);
         if (clock->phase)
         {
@@ -37,22 +37,10 @@ void *rom_function(void *vargrp)
     uint16_t bus_value = 0;
     bool write_val = false;
 
-    uint8_t memory[0xffff] = {
-        NOOP,
-        JUMP,
-        0x00, 0x00};
-
-    memory[0xfff8] = 0xff;
-    memory[0xfff9] = 0x00;
-
-    memory[0xfffa] = 0x10;
-    memory[0xfffb] = 0x00;
-
-    memory[0xfffc] = 0x00;
-    memory[0xfffd] = 0xff;
-
-    memory[0xfffe] = 0x00;
-    memory[0xffff] = 0x00;
+    FILE *fileptr = fopen("../memory.bin", "rb");
+    uint8_t *memory = (uint8_t *)malloc(0xffff * sizeof(uint8_t));
+    fread(memory, 0xffff, 1, fileptr);
+    fclose(fileptr);
 
     while (1)
     {

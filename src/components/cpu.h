@@ -42,6 +42,7 @@ void execute_instruction(Cpu *cpu, data_bus_t instruction);
 
 address_bus_t read_address(Cpu *cpu);
 data_bus_t read_data(Cpu *cpu);
+data_bus_t read_immediate(Cpu *cpu);
 
 typedef enum Register
 {
