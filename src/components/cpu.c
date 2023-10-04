@@ -1295,11 +1295,33 @@ void call(Cpu *cpu, address_bus_t address)
     push_value_to_stack(cpu, (cpu->program_counter & 0xff00) >> 8);
     push_value_to_stack(cpu, (cpu->program_counter & 0x00ff));
 
+    // Push stack_size and stack_address 
+    push_value_to_stack(cpu, (cpu->stack_size & 0xff00) >> 8);
+    push_value_to_stack(cpu, (cpu->stack_size & 0x00ff));
+
+    push_value_to_stack(cpu, (cpu->stack_address & 0xff00) >> 8);
+    push_value_to_stack(cpu, (cpu->stack_address & 0x00ff));
+
+    // init a new stack
+    cpu->stack_size = cpu->stack_size - (cpu->stack_pointer - cpu->stack_address);
+    cpu->stack_address = cpu->stack_pointer;
+
     jump(cpu, address);
 }
 
 void return_ok(Cpu *cpu)
 {
+    // Recreate old stack
+    cpu->stack_address = 0; // to allow popping from the previous stack
+
+    data_bus_t stack_address_lsb = pop_value_from_stack(cpu);
+    data_bus_t stack_address_msb = pop_value_from_stack(cpu);
+    cpu->stack_address = from_2_data_bus_t(stack_address_msb, stack_address_lsb);
+
+    data_bus_t stack_size_lsb = pop_value_from_stack(cpu);
+    data_bus_t stack_size_msb = pop_value_from_stack(cpu);
+    cpu->stack_size = from_2_data_bus_t(stack_size_msb, stack_size_lsb);
+
     // Pop program_counter
     data_bus_t program_counter_lsb = pop_value_from_stack(cpu);
     data_bus_t program_counter_msb = pop_value_from_stack(cpu);

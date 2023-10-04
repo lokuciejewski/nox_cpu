@@ -159,10 +159,10 @@ enum Opcodes // IM = immediate byte value following the opcode
     POP_LI_STACK,           // pop LI from stack
 
     // Functions. Note that `stack_size` == 0 disables `CALL` and all `RETURN` functions
-    CALL,                   // push flags, index registers and current PC to stack and jump to specified address 
-    RETURN_OK,              // pop flags, set the OK flag (do not pop ERR/OK flags) and set EXIT_CODE to 0, pop index registers and PC from stack and resume from PC
+    CALL,                   // push flags, index registers, current PC, `stack_size` and `stack_address` to stack. Then, setup a new stack starting at current `stack_pointer` with size `stack_size` - (`stack_pointer` - `stack_address`) and jump to specified address 
+    RETURN_OK,              // return to the old `stack_address` and `stack_size` values, then pop flags, set the OK flag (do not pop ERR/OK flags) and set EXIT_CODE to 0, pop index registers and PC from stack and resume from PC
     RETURN_OK_EXIT_CODE,    // same as above but set EXIT_CODE to IMMEDIATE value
-    RETURN_ERR,             // pop flags, set the ERR flag (do not pop ERR/OK flags) and set EXIT_CODE to 0, pop index registers and PC from stack and resume from PC 
+    RETURN_ERR,             // return to the old `stack_address` and `stack_size` values, then pop flags, set the ERR flag (do not pop ERR/OK flags) and set EXIT_CODE to 0, pop index registers and PC from stack and resume from PC 
     RETURN_ERR_EXIT_CODE,   // same as above but set EXIT_CODE to IMMEDIATE value
 
     // Flags 
