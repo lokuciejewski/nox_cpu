@@ -862,7 +862,7 @@ void shift_register(Cpu *cpu, Register target, bool left)
 
 void compare_register_immediate(Cpu *cpu, Register target, data_bus_t value)
 {
-    data_bus_t val;
+    data_bus_t val, reg_msb, reg_lsb;
     switch (target)
     {
     case A:
@@ -884,6 +884,22 @@ void compare_register_immediate(Cpu *cpu, Register target, data_bus_t value)
         val = cpu->registers.reg_LI;
         cpu->zero_flag = val == value;
         cpu->overflow_flag = val > value;
+        break;
+    case AB:
+        val = read_immediate(cpu); // value_lsb
+        reg_msb = peek(&cpu->registers.reg_A);
+        reg_lsb = peek(&cpu->registers.reg_B);
+        cpu->zero_flag = reg_lsb == val && reg_msb == value;
+        cpu->overflow_flag = reg_lsb > val || reg_msb > value;
+        delay_for_n_clock_ticks(cpu->clock, 1);
+        break;
+    case HLI:
+        val = read_immediate(cpu); // value_lsb
+        reg_msb = cpu->registers.reg_HI;
+        reg_lsb = cpu->registers.reg_LI;
+        cpu->zero_flag = reg_lsb == val && reg_msb == value;
+        cpu->overflow_flag = reg_lsb > val || reg_msb > value;
+        delay_for_n_clock_ticks(cpu->clock, 1);
         break;
     }
     delay_for_n_clock_ticks(cpu->clock, 1);

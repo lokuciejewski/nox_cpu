@@ -37,7 +37,7 @@ void *rom_function(void *vargrp)
     uint16_t bus_value = 0;
     bool write_val = false;
 
-    FILE *fileptr = fopen("../memory.bin", "rb");
+    FILE *fileptr = fopen("./memory.bin", "rb");
     uint8_t *memory = (uint8_t *)malloc(0xffff * sizeof(uint8_t));
     fread(memory, 0xffff, 1, fileptr);
     fclose(fileptr);
@@ -58,11 +58,6 @@ void *rom_function(void *vargrp)
             {
                 *buses->data_bus = memory[bus_value];
             }
-
-            // printf("\nMEM: ");
-            // for (uint8_t i = 0; i < 20; i++)
-            //     printf("0x%x ", memory[i]);
-            // printf("\n");
         }
     }
 }
