@@ -560,6 +560,7 @@ void push_register_absolute(Cpu *cpu, Register target, address_bus_t address)
         set_address_bus(cpu, address);
         data_bus_t value = read_data(cpu);
         push_register_immediate(cpu, target, value);
+        delay_for_n_clock_ticks(cpu->clock, 1);
         break;
     case AB:
         set_address_bus(cpu, address);
