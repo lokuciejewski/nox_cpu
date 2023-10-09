@@ -35,11 +35,12 @@ void print_cpu(Cpu *cpu)
            cpu->overflow_flag, cpu->zero_flag, cpu->irq_flag, cpu->err_flag, cpu->registers.reg_EXIT_CODE);
 }
 
-void run(Cpu *cpu, bool step_by_instruction)
+void run(Cpu *cpu, bool print_status, bool step_by_instruction)
 {
     while (1)
     {
-        print_cpu(cpu);
+        if (print_status)
+            print_cpu(cpu);
         if (*cpu->buses.sig_irq && cpu->irq_flag)
         {
             call(cpu, cpu->irq_address);
@@ -466,7 +467,7 @@ void execute_instruction(Cpu *cpu, data_bus_t instruction)
         clear_flag(cpu, Zero);
         break;
     case HALT:
-        return;
+        cpu->program_counter--;
     default:
         noop(cpu);
     }
@@ -662,17 +663,21 @@ void push_register_indirect(Cpu *cpu, Register target)
     {
     case A:
         push(&cpu->registers.reg_A, value);
+        cpu->zero_flag = value == 0;
         break;
     case B:
         push(&cpu->registers.reg_B, value);
+        cpu->zero_flag = value == 0;
         break;
     case AB:
         push(&cpu->registers.reg_A, value);
         set_address_bus(cpu, address + 1);
         data_bus_t value_lsb = read_data(cpu);
         push(&cpu->registers.reg_B, value_lsb);
+        cpu->zero_flag = value == 0 == value_lsb;
         break;
     }
+    delay_for_n_clock_ticks(cpu->clock, 1);
 }
 
 void pop_register_absolute(Cpu *cpu, Register source, address_bus_t address)
@@ -1645,7 +1650,6 @@ void halt(Cpu *cpu)
 
 void reset(Cpu *cpu)
 {
-    printf("CPU reset\n");
     // Zero out registers
     cpu->registers.reg_A.stack_ptr = 0;
     cpu->registers.reg_B.stack_ptr = 0;

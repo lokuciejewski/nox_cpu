@@ -31,6 +31,26 @@ struct arg_buses
     bool *sig_write;
 };
 
+void *output_function(void *vargrp)
+{
+    struct arg_buses *buses = (struct arg_buses *)vargrp;
+    uint16_t bus_value = 0;
+    bool write_val = false;
+    while (1)
+    {
+        if (*buses->address_bus != bus_value || write_val != *buses->sig_write)
+        {
+            bus_value = *buses->address_bus;
+            write_val = *buses->sig_write;
+
+            if (write_val && bus_value == 0xe000)
+            {
+                printf("%c", *buses->data_bus);
+            }
+        }
+    }
+}
+
 void *rom_function(void *vargrp)
 {
     struct arg_buses *buses = (struct arg_buses *)vargrp;
@@ -49,9 +69,9 @@ void *rom_function(void *vargrp)
             bus_value = *buses->address_bus;
             write_val = *buses->sig_write;
 
-            if (*buses->sig_write)
+            if (write_val)
             {
-                printf("\nWRITE: 0x%02x to 0x%04x\n", *buses->data_bus, bus_value);
+                // printf("\nWRITE: 0x%02x to 0x%04x\n", *buses->data_bus, bus_value);
                 memory[bus_value] = *buses->data_bus;
             }
             else
@@ -73,15 +93,18 @@ int main()
     pthread_t clock_thread;
     pthread_create(&clock_thread, NULL, tick_function, (void *)&clock);
 
-    pthread_t rom_thread;
     struct arg_buses buses = {
         &address_bus,
         &data_bus,
         &sig_write};
+    pthread_t rom_thread;
     pthread_create(&rom_thread, NULL, rom_function, (void *)&buses);
+
+    pthread_t output_thread;
+    pthread_create(&output_thread, NULL, output_function, (void *)&buses);
 
     Cpu *cpu = init_cpu(&clock, &address_bus, &data_bus, &sig_write, &sig_irq);
     reset(cpu);
-    run(cpu, false);
+    run(cpu, false, false);
     return 0;
 }
