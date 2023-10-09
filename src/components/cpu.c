@@ -35,7 +35,7 @@ void print_cpu(Cpu *cpu)
            cpu->overflow_flag, cpu->zero_flag, cpu->irq_flag, cpu->err_flag, cpu->registers.reg_EXIT_CODE);
 }
 
-void run(Cpu *cpu)
+void run(Cpu *cpu, bool step_by_instruction)
 {
     while (1)
     {
@@ -50,6 +50,10 @@ void run(Cpu *cpu)
             data_bus_t next_instruction = read_data(cpu);
             cpu->program_counter++;
             execute_instruction(cpu, next_instruction);
+            if (step_by_instruction)
+            {
+                getchar();
+            }
         }
     }
 }
@@ -59,17 +63,23 @@ void execute_instruction(Cpu *cpu, data_bus_t instruction)
     delay_for_n_clock_ticks(cpu->clock, DEFAULT_OP_DELAY_TICKS);
     switch (instruction)
     {
-    case PUSH_A_IMMEDIATE:
+    case PUSH_IMMEDIATE_A:
         push_register_immediate(cpu, A, read_immediate(cpu));
         break;
-    case PUSH_B_IMMEDIATE:
+    case PUSH_IMMEDIATE_B:
         push_register_immediate(cpu, B, read_immediate(cpu));
         break;
-    case PUSH_A_ABSOLUTE:
+    case PUSH_ABSOLUTE_A:
         push_register_absolute(cpu, A, read_address(cpu));
         break;
-    case PUSH_B_ABSOLUTE:
+    case PUSH_ABSOLUTE_B:
         push_register_absolute(cpu, B, read_address(cpu));
+        break;
+    case PUSH_INDIRECT_A:
+        push_register_indirect(cpu, A);
+        break;
+    case PUSH_INDIRECT_B:
+        push_register_indirect(cpu, B);
         break;
     case PUSH_A_B:
         push_register_to_register(cpu, A, B);
@@ -101,6 +111,12 @@ void execute_instruction(Cpu *cpu, data_bus_t instruction)
     case POP_B_ABSOLUTE:
         pop_register_absolute(cpu, B, read_address(cpu));
         break;
+    case POP_A_INDIRECT:
+        pop_register_indirect(cpu, A);
+        break;
+    case POP_B_INDIRECT:
+        pop_register_indirect(cpu, B);
+        break;
     case POP_A_HI:
         pop_register_to_register(cpu, A, HI);
         break;
@@ -113,22 +129,34 @@ void execute_instruction(Cpu *cpu, data_bus_t instruction)
     case POP_B_LI:
         pop_register_to_register(cpu, B, LI);
         break;
+    case PEEK_A_ABSOLUTE:
+        peek_register_absolute(cpu, A, read_address(cpu));
+        break;
+    case PEEK_B_ABSOLUTE:
+        peek_register_absolute(cpu, B, read_address(cpu));
+        break;
+    case PEEK_A_INDIRECT:
+        peek_register_indirect(cpu, A);
+        break;
+    case PEEK_B_INDIRECT:
+        peek_register_indirect(cpu, B);
+        break;
     case ADD_A_B:
         add_registers(cpu, A, B);
         break;
     case ADD_B_A:
         add_registers(cpu, B, A);
         break;
-    case ADD_A_IMMEDIATE:
+    case ADD_IMMEDIATE_A:
         add_immediate(cpu, A, read_immediate(cpu));
         break;
-    case ADD_B_IMMEDIATE:
+    case ADD_IMMEDIATE_B:
         add_immediate(cpu, B, read_immediate(cpu));
         break;
-    case ADD_A_ABSOLUTE:
+    case ADD_ABSOLUTE_A:
         add_absolute(cpu, A, read_address(cpu));
         break;
-    case ADD_B_ABSOLUTE:
+    case ADD_ABSOLUTE_B:
         add_absolute(cpu, B, read_address(cpu));
     case SUB_A_B:
         sub_registers(cpu, A, B);
@@ -136,16 +164,16 @@ void execute_instruction(Cpu *cpu, data_bus_t instruction)
     case SUB_B_A:
         sub_registers(cpu, A, B);
         break;
-    case SUB_A_IMMEDIATE:
+    case SUB_IMMEDIATE_A:
         sub_immediate(cpu, A, read_immediate(cpu));
         break;
-    case SUB_B_IMMEDIATE:
+    case SUB_IMMEDIATE_B:
         sub_immediate(cpu, B, read_immediate(cpu));
         break;
-    case SUB_A_ABSOLUTE:
+    case SUB_ABSOLUTE_A:
         sub_absolute(cpu, A, read_address(cpu));
         break;
-    case SUB_B_ABSOLUTE:
+    case SUB_ABSOLUTE_B:
         sub_absolute(cpu, B, read_address(cpu));
         break;
     case SHIFT_LEFT_A:
@@ -187,28 +215,28 @@ void execute_instruction(Cpu *cpu, data_bus_t instruction)
     case CMP_A_B:
         compare_registers(cpu, A, B);
         break;
-    case CMP_A_IMMEDIATE:
+    case CMP_IMMEDIATE_A:
         compare_register_immediate(cpu, A, read_immediate(cpu));
         break;
-    case CMP_B_IMMEDIATE:
+    case CMP_IMMEDIATE_B:
         compare_register_immediate(cpu, B, read_immediate(cpu));
         break;
-    case CMP_A_ABSOLUTE:
+    case CMP_ABSOLUTE_A:
         compare_register_absolute(cpu, A, read_address(cpu));
         break;
-    case CMP_B_ABSOLUTE:
+    case CMP_ABSOLUTE_B:
         compare_register_absolute(cpu, B, read_address(cpu));
         break;
-    case PUSH_HI_IMMEDIATE:
+    case PUSH_IMMEDIATE_HI:
         push_register_immediate(cpu, HI, read_immediate(cpu));
         break;
-    case PUSH_LI_IMMEDIATE:
+    case PUSH_IMMEDIATE_LI:
         push_register_immediate(cpu, LI, read_immediate(cpu));
         break;
-    case PUSH_HI_ABSOLUTE:
+    case PUSH_ABSOLUTE_HI:
         push_register_absolute(cpu, HI, read_address(cpu));
         break;
-    case PUSH_LI_ABSOLUTE:
+    case PUSH_ABSOLUTE_LI:
         push_register_absolute(cpu, LI, read_address(cpu));
         break;
     case STORE_HI_ABSOLUTE:
@@ -217,16 +245,16 @@ void execute_instruction(Cpu *cpu, data_bus_t instruction)
     case STORE_LI_ABSOLUTE:
         pop_register_absolute(cpu, LI, read_address(cpu));
         break;
-    case CMP_HI_IMMEDIATE:
+    case CMP_IMMEDIATE_HI:
         compare_register_immediate(cpu, HI, read_immediate(cpu));
         break;
-    case CMP_LI_IMMEDIATE:
+    case CMP_IMMEDIATE_LI:
         compare_register_immediate(cpu, LI, read_immediate(cpu));
         break;
-    case CMP_HI_ABSOLUTE:
+    case CMP_ABSOLUTE_HI:
         compare_register_absolute(cpu, HI, read_address(cpu));
         break;
-    case CMP_LI_ABSOLUTE:
+    case CMP_ABSOLUTE_LI:
         compare_register_absolute(cpu, LI, read_address(cpu));
         break;
     case INC_HI:
@@ -250,11 +278,14 @@ void execute_instruction(Cpu *cpu, data_bus_t instruction)
     case SWAP_HI_LI:
         pop_register_to_register(cpu, HI, LI);
         break;
-    case PUSH_AB_IMMEDIATE:
+    case PUSH_IMMEDIATE_AB:
         push_register_immediate(cpu, AB, read_immediate(cpu));
         break;
-    case PUSH_AB_ABSOLUTE:
+    case PUSH_ABSOLUTE_AB:
         push_register_absolute(cpu, AB, read_address(cpu));
+        break;
+    case PUSH_INDIRECT_AB:
+        push_register_indirect(cpu, AB);
         break;
     case PUSH_HLI_AB:
         push_register_to_register(cpu, HLI, AB);
@@ -262,19 +293,28 @@ void execute_instruction(Cpu *cpu, data_bus_t instruction)
     case POP_AB_ABSOLUTE:
         pop_register_absolute(cpu, AB, read_address(cpu));
         break;
+    case POP_AB_INDIRECT:
+        pop_register_indirect(cpu, AB);
+        break;
     case POP_AB_HLI:
         pop_register_to_register(cpu, AB, HLI);
         break;
-    case ADD_AB_IMMEDIATE:
+    case PEEK_AB_ABSOLUTE:
+        peek_register_absolute(cpu, AB, read_address(cpu));
+        break;
+    case PEEK_AB_INDIRECT:
+        peek_register_indirect(cpu, AB);
+        break;
+    case ADD_IMMEDIATE_AB:
         add_immediate(cpu, AB, read_immediate(cpu));
         break;
-    case ADD_AB_ABSOLUTE:
+    case ADD_ABSOLUTE_AB:
         sub_absolute(cpu, AB, read_address(cpu));
         break;
-    case SUB_AB_IMMEDIATE:
+    case SUB_IMMEDIATE_AB:
         sub_immediate(cpu, AB, read_immediate(cpu));
         break;
-    case SUB_AB_ABSOLUTE:
+    case SUB_ABSOLUTE_AB:
         sub_absolute(cpu, AB, read_address(cpu));
         break;
     case SHIFT_LEFT_AB:
@@ -283,46 +323,46 @@ void execute_instruction(Cpu *cpu, data_bus_t instruction)
     case SHIFT_RIGHT_AB:
         shift_register(cpu, AB, false);
         break;
-    case AND_AB_IMMEDIATE:
+    case AND_IMMEDIATE_AB:
         perform_logic_operation_immediate(cpu, AB, And, read_immediate(cpu));
         break;
-    case AND_AB_ABSOLUTE:
+    case AND_ABSOLUTE_AB:
         perform_logic_operation_absolute(cpu, AB, And, read_address(cpu));
         break;
-    case OR_AB_IMMEDIATE:
+    case OR_IMMEDIATE_AB:
         perform_logic_operation_immediate(cpu, AB, Or, read_immediate(cpu));
         break;
-    case OR_AB_ABSOLUTE:
+    case OR_ABSOLUTE_AB:
         perform_logic_operation_absolute(cpu, AB, Or, read_address(cpu));
         break;
-    case XOR_AB_IMMEDIATE:
+    case XOR_IMMEDIATE_AB:
         perform_logic_operation_immediate(cpu, AB, Xor, read_immediate(cpu));
         break;
-    case XOR_AB_ABSOLUTE:
+    case XOR_ABSOLUTE_AB:
         perform_logic_operation_immediate(cpu, AB, Xor, read_address(cpu));
         break;
     case NOT_AB:
         perform_logic_operation_not(cpu, AB);
         break;
-    case PUSH_HLI_IMMEDIATE:
+    case PUSH_IMMEDIATE_HLI:
         push_register_immediate(cpu, HLI, read_immediate(cpu));
         break;
-    case PUSH_HLI_ABSOLUTE:
+    case PUSH_ABSOLUTE_HLI:
         push_register_absolute(cpu, HLI, read_immediate(cpu));
         break;
     case STORE_HLI_ABSOLUTE:
         pop_register_absolute(cpu, HLI, read_address(cpu));
         break;
-    case CMP_AB_IMMEDIATE:
+    case CMP_IMMEDIATE_AB:
         compare_register_immediate(cpu, AB, read_immediate(cpu));
         break;
-    case CMP_AB_ABSOLUTE:
+    case CMP_ABSOLUTE_AB:
         compare_register_absolute(cpu, AB, read_address(cpu));
         break;
-    case CMP_HLI_IMMEDIATE:
+    case CMP_IMMEDIATE_HLI:
         compare_register_immediate(cpu, HLI, read_immediate(cpu));
         break;
-    case CMP_HLI_ABSOLUTE:
+    case CMP_ABSOLUTE_HLI:
         compare_register_absolute(cpu, HLI, read_address(cpu));
         break;
     case INC_HLI:
@@ -355,10 +395,10 @@ void execute_instruction(Cpu *cpu, data_bus_t instruction)
     case PUSH_AB_STACK_SIZE:
         push_stack_size_to_ab(cpu);
         break;
-    case POP_AB_STACK_ADDRESS:
+    case POP_STACK_ADDRESS_AB:
         pop_ab_to_stack_address(cpu);
         break;
-    case POP_AB_STACK_SIZE:
+    case POP_STACK_SIZE_AB:
         pop_ab_to_stack_size(cpu);
         break;
     case POP_AB_IRQ:
@@ -367,25 +407,25 @@ void execute_instruction(Cpu *cpu, data_bus_t instruction)
     case PUSH_A_STACK:
         push_register_to_stack(cpu, A, read_immediate(cpu));
         break;
-    case POP_A_STACK:
+    case POP_STACK_A:
         pop_register_from_stack(cpu, A, read_immediate(cpu));
         break;
     case PUSH_B_STACK:
         push_register_to_stack(cpu, B, read_immediate(cpu));
         break;
-    case POP_B_STACK:
+    case POP_STACK_B:
         pop_register_from_stack(cpu, B, read_immediate(cpu));
         break;
     case PUSH_HI_STACK:
         push_register_to_stack(cpu, HI, 0);
         break;
-    case POP_HI_STACK:
+    case POP_STACK_HI:
         pop_register_from_stack(cpu, HI, 0);
         break;
     case PUSH_LI_STACK:
         push_register_to_stack(cpu, LI, 0);
         break;
-    case POP_LI_STACK:
+    case POP_STACK_LI:
         pop_register_from_stack(cpu, LI, 0);
         break;
     case CALL:
@@ -588,29 +628,51 @@ void push_register_to_register(Cpu *cpu, Register source, Register target)
     switch (source)
     {
     case A:
-        push(&cpu->registers.reg_B, pop(&cpu->registers.reg_A));
+        push(&cpu->registers.reg_B, peek(&cpu->registers.reg_A));
         break;
     case B:
-        push(&cpu->registers.reg_A, pop(&cpu->registers.reg_B));
+        push(&cpu->registers.reg_A, peek(&cpu->registers.reg_B));
         break;
     case HI:
-        cpu->registers.reg_HI = pop(&cpu->registers.reg_A);
+        cpu->registers.reg_HI = peek(&cpu->registers.reg_A);
         break;
     case LI:
-        cpu->registers.reg_LI = pop(&cpu->registers.reg_B);
+        cpu->registers.reg_LI = peek(&cpu->registers.reg_B);
         break;
     case EXIT_CODE:
         switch (target)
         {
         case A:
-            cpu->registers.reg_EXIT_CODE = pop(&cpu->registers.reg_A) & 0b00001111;
+            cpu->registers.reg_EXIT_CODE = peek(&cpu->registers.reg_A) & 0b00001111;
             break;
         case B:
-            cpu->registers.reg_EXIT_CODE = pop(&cpu->registers.reg_B) & 0b00001111;
+            cpu->registers.reg_EXIT_CODE = peek(&cpu->registers.reg_B) & 0b00001111;
             break;
         }
     }
     delay_for_n_clock_ticks(cpu->clock, 1);
+}
+
+void push_register_indirect(Cpu *cpu, Register target)
+{
+    address_bus_t address = from_2_data_bus_t(cpu->registers.reg_HI, cpu->registers.reg_LI);
+    set_address_bus(cpu, address);
+    data_bus_t value = read_data(cpu);
+    switch (target)
+    {
+    case A:
+        push(&cpu->registers.reg_A, value);
+        break;
+    case B:
+        push(&cpu->registers.reg_B, value);
+        break;
+    case AB:
+        push(&cpu->registers.reg_A, value);
+        set_address_bus(cpu, address + 1);
+        data_bus_t value_lsb = read_data(cpu);
+        push(&cpu->registers.reg_B, value_lsb);
+        break;
+    }
 }
 
 void pop_register_absolute(Cpu *cpu, Register source, address_bus_t address)
@@ -659,10 +721,26 @@ void pop_register_to_register(Cpu *cpu, Register source, Register target)
     switch (source)
     {
     case A:
-        cpu->registers.reg_HI = pop(&cpu->registers.reg_A);
+        switch (target)
+        {
+        case HI:
+            cpu->registers.reg_HI = pop(&cpu->registers.reg_A);
+            break;
+        case LI:
+            cpu->registers.reg_LI = pop(&cpu->registers.reg_A);
+            break;
+        }
         break;
     case B:
-        cpu->registers.reg_LI = pop(&cpu->registers.reg_B);
+        switch (target)
+        {
+        case HI:
+            cpu->registers.reg_HI = pop(&cpu->registers.reg_B);
+            break;
+        case LI:
+            cpu->registers.reg_LI = pop(&cpu->registers.reg_B);
+            break;
+        }
         break;
     case HI:
     case LI:
@@ -674,16 +752,105 @@ void pop_register_to_register(Cpu *cpu, Register source, Register target)
         cpu->registers.reg_HI = pop(&cpu->registers.reg_A);
         cpu->registers.reg_LI = pop(&cpu->registers.reg_B);
         break;
+    case EXIT_CODE:
+        switch (target)
+        {
+        case A:
+            cpu->registers.reg_EXIT_CODE = pop(&cpu->registers.reg_A) & 0b00001111;
+            break;
+        case B:
+            cpu->registers.reg_EXIT_CODE = pop(&cpu->registers.reg_B) & 0b00001111;
+            break;
+        }
     default:
         break;
     }
     delay_for_n_clock_ticks(cpu->clock, 1);
 }
 
+void pop_register_indirect(Cpu *cpu, Register source)
+{
+    address_bus_t address = from_2_data_bus_t(cpu->registers.reg_HI, cpu->registers.reg_LI);
+    set_address_bus(cpu, address);
+    switch (source)
+    {
+    case A:
+        set_data_bus(cpu, pop(&cpu->registers.reg_A));
+        break;
+    case B:
+        set_data_bus(cpu, pop(&cpu->registers.reg_B));
+        break;
+    case AB:
+        set_data_bus(cpu, pop(&cpu->registers.reg_B));
+        set_write_signal(cpu, true);
+        delay_for_n_clock_ticks(&cpu->clock, 1);
+        set_write_signal(cpu, false);
+        set_address_bus(cpu, address + 1);
+        set_data_bus(cpu, pop(&cpu->registers.reg_A));
+        break;
+    }
+    set_write_signal(cpu, true);
+    delay_for_n_clock_ticks(&cpu->clock, 1);
+    set_write_signal(cpu, false);
+}
+
+void peek_register_absolute(Cpu *cpu, Register source, address_bus_t address)
+{
+    set_address_bus(cpu, address);
+    switch (source)
+    {
+    case A:
+        set_data_bus(cpu, peek(&cpu->registers.reg_A));
+        break;
+    case B:
+        set_data_bus(cpu, peek(&cpu->registers.reg_B));
+        break;
+    case AB:
+        set_data_bus(cpu, peek(&cpu->registers.reg_A));
+        set_write_signal(cpu, true);
+        delay_for_n_clock_ticks(cpu->clock, 1);
+        set_write_signal(cpu, false);
+        set_address_bus(cpu, address + 1);
+        set_data_bus(cpu, peek(&cpu->registers.reg_B));
+        break;
+    default:
+        break;
+    }
+    set_write_signal(cpu, true);
+    delay_for_n_clock_ticks(cpu->clock, 1);
+    set_write_signal(cpu, false);
+}
+
+void peek_register_indirect(Cpu *cpu, Register source)
+{
+    address_bus_t address = from_2_data_bus_t(cpu->registers.reg_HI, cpu->registers.reg_LI);
+    set_address_bus(cpu, address);
+    switch (source)
+    {
+    case A:
+        set_data_bus(cpu, peek(&cpu->registers.reg_A));
+        break;
+    case B:
+        set_data_bus(cpu, peek(&cpu->registers.reg_B));
+        break;
+    case AB:
+        set_data_bus(cpu, peek(&cpu->registers.reg_B));
+        set_write_signal(cpu, true);
+        delay_for_n_clock_ticks(&cpu->clock, 1);
+        set_write_signal(cpu, false);
+        set_address_bus(cpu, address + 1);
+        set_data_bus(cpu, peek(&cpu->registers.reg_A));
+        break;
+    }
+    set_write_signal(cpu, true);
+    delay_for_n_clock_ticks(&cpu->clock, 1);
+    set_write_signal(cpu, false);
+}
+
 void add_registers(Cpu *cpu, Register summand, Register target)
 {
-    data_bus_t val_a = pop(&cpu->registers.reg_A);
-    data_bus_t val_b = pop(&cpu->registers.reg_B);
+    data_bus_t val_a = peek(&cpu->registers.reg_A);
+    data_bus_t val_b = peek(&cpu->registers.reg_B);
     cpu->overflow_flag = val_a > 127 && val_b > 127; // TODO: hardcoded values
     cpu->zero_flag = val_a == 0 == val_b;
     switch (target)
@@ -704,13 +871,13 @@ void add_immediate(Cpu *cpu, Register target, data_bus_t value)
     switch (target)
     {
     case A:
-        val = pop(&cpu->registers.reg_A);
+        val = peek(&cpu->registers.reg_A);
         cpu->overflow_flag = val > 127 && value > 127; // TODO: hardcoded values
         push(&cpu->registers.reg_A, val + value);
         cpu->zero_flag = peek(&cpu->registers.reg_A) == 0;
         break;
     case B:
-        val = pop(&cpu->registers.reg_B);
+        val = peek(&cpu->registers.reg_B);
         cpu->overflow_flag = val > 127 && value > 127; // TODO: hardcoded values
         push(&cpu->registers.reg_B, val + value);
         cpu->zero_flag = peek(&cpu->registers.reg_B) == 0;
@@ -736,8 +903,8 @@ void add_absolute(Cpu *cpu, Register target, address_bus_t address)
         data_bus_t value_msb = read_data(cpu);
         set_address_bus(cpu, address + 1);
         data_bus_t value_lsb = read_data(cpu);
-        data_bus_t val_a = pop(&cpu->registers.reg_A);
-        data_bus_t val_b = pop(&cpu->registers.reg_B);
+        data_bus_t val_a = peek(&cpu->registers.reg_A);
+        data_bus_t val_b = peek(&cpu->registers.reg_B);
         bool overflow_lsb = val_b > 127 && value_lsb > 127;                 // TODO: hardcoded values
         cpu->overflow_flag = val_a + overflow_lsb > 127 && value_msb > 127; // TODO: hardcoded values
         push(&cpu->registers.reg_B, val_b + value_lsb);
@@ -750,8 +917,8 @@ void add_absolute(Cpu *cpu, Register target, address_bus_t address)
 
 void sub_registers(Cpu *cpu, Register minuend, Register target)
 {
-    data_bus_t val_a = pop(&cpu->registers.reg_A);
-    data_bus_t val_b = pop(&cpu->registers.reg_B);
+    data_bus_t val_a = peek(&cpu->registers.reg_A);
+    data_bus_t val_b = peek(&cpu->registers.reg_B);
     cpu->overflow_flag = val_a < val_b;
     cpu->zero_flag = val_a == val_b;
     switch (target)
@@ -772,13 +939,13 @@ void sub_immediate(Cpu *cpu, Register target, data_bus_t value)
     switch (target)
     {
     case A:
-        val = pop(&cpu->registers.reg_A);
+        val = peek(&cpu->registers.reg_A);
         cpu->overflow_flag = val < value;
         cpu->zero_flag = val == value;
         push(&cpu->registers.reg_A, val - value);
         break;
     case B:
-        val = pop(&cpu->registers.reg_B);
+        val = peek(&cpu->registers.reg_B);
         cpu->overflow_flag = val < value;
         cpu->zero_flag = val == value;
         push(&cpu->registers.reg_B, val - value);
@@ -804,8 +971,8 @@ void sub_absolute(Cpu *cpu, Register target, address_bus_t address)
         data_bus_t value_msb = read_data(cpu);
         set_address_bus(cpu, address + 1);
         data_bus_t value_lsb = read_data(cpu);
-        data_bus_t val_a = pop(&cpu->registers.reg_A);
-        data_bus_t val_b = pop(&cpu->registers.reg_B);
+        data_bus_t val_a = peek(&cpu->registers.reg_A);
+        data_bus_t val_b = peek(&cpu->registers.reg_B);
         bool overflow_lsb = val_b < value_lsb;
         cpu->overflow_flag = val_a - overflow_lsb < value_msb || val_a == 0;
         push(&cpu->registers.reg_B, val_b - value_lsb);

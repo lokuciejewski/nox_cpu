@@ -19,14 +19,14 @@ typedef struct Cpu
 
     address_bus_t stack_pointer;
     address_bus_t stack_address; // Starting address of stack. Stack grows upwards (towards the max possible address)
-    address_bus_t stack_size;    // Stack size, set up by using POP_AB_STACK_SIZE
+    address_bus_t stack_size;    // Stack size, set up by using POP_STACK_SIZE_AB
                                  // If not set up before setting the `stack_address`, the stack size is only limited by the memory size - unsafe!
     /*
-    Example for 8 bit A/B registers using POP_AB_STACK_SIZE:
+    Example for 8 bit A/B registers using POP_STACK_SIZE_AB:
     PUSH_AB_IMMEDIATE 0x1f00 <- `stack_size`
     PUSH_AB_IMMEDIATE 0x1000 <- `stack_address`
     POP_AB_STACK_ADDRESS <- sets `stack_address` to 0x1000
-    POP_AB_STACK_SIZE <- sets `stack_size` to 0x1f00
+    POP_STACK_SIZE_AB <- sets `stack_size` to 0x1f00
     */
 
     bool overflow_flag;
@@ -37,7 +37,7 @@ typedef struct Cpu
 
 Cpu *init_cpu(Clock *clock, address_bus_t *address_bus, data_bus_t *data_bus, bool *sig_write, bool *sig_irq);
 void print_cpu(Cpu *cpu);
-void run(Cpu *cpu);
+void run(Cpu *cpu, bool step_by_instruction);
 void execute_instruction(Cpu *cpu, data_bus_t instruction);
 
 address_bus_t read_address(Cpu *cpu);
@@ -68,9 +68,14 @@ double_data_bus_t from_2_data_bus_t(data_bus_t msb, data_bus_t lsb);
 void push_register_immediate(Cpu *cpu, Register target, data_bus_t value);
 void push_register_absolute(Cpu *cpu, Register target, address_bus_t address);
 void push_register_to_register(Cpu *cpu, Register source, Register target);
+void push_register_indirect(Cpu *cpu, Register target);
 
 void pop_register_absolute(Cpu *cpu, Register source, address_bus_t address);
 void pop_register_to_register(Cpu *cpu, Register source, Register target);
+void pop_register_indirect(Cpu *cpu, Register source);
+
+void peek_register_absolute(Cpu *cpu, Register source, address_bus_t address);
+void peek_register_indirect(Cpu *cpu, Register source);
 
 void add_registers(Cpu *cpu, Register summand, Register target);
 void add_immediate(Cpu *cpu, Register target, data_bus_t value);
@@ -80,7 +85,7 @@ void sub_registers(Cpu *cpu, Register minuend, Register target);
 void sub_immediate(Cpu *cpu, Register target, data_bus_t value);
 void sub_absolute(Cpu *cpu, Register target, address_bus_t address);
 
-void shift_register(Cpu* cpu, Register target, bool left);
+void shift_register(Cpu *cpu, Register target, bool left);
 
 void compare_register_immediate(Cpu *cpu, Register target, data_bus_t value);
 void compare_register_absolute(Cpu *cpu, Register target, address_bus_t address);

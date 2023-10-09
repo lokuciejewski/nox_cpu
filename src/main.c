@@ -13,12 +13,12 @@ void *tick_function(void *vargrp)
     uint64_t n_of_ticks = 0;
     while (1)
     {
-        usleep(50000);
+        usleep(10000);
         tick(clock);
         if (clock->phase)
         {
             n_of_ticks += 1;
-            printf("\r%d", n_of_ticks);
+            // printf("\r%d", n_of_ticks);
             fflush(stdout);
         }
     }
@@ -51,7 +51,7 @@ void *rom_function(void *vargrp)
 
             if (*buses->sig_write)
             {
-                printf("\nWRITE: 0x%x to 0x%x\n", bus_value, *buses->data_bus);
+                printf("\nWRITE: 0x%02x to 0x%04x\n", *buses->data_bus, bus_value);
                 memory[bus_value] = *buses->data_bus;
             }
             else
@@ -82,6 +82,6 @@ int main()
 
     Cpu *cpu = init_cpu(&clock, &address_bus, &data_bus, &sig_write, &sig_irq);
     reset(cpu);
-    run(cpu);
+    run(cpu, false);
     return 0;
 }
