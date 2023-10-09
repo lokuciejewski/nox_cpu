@@ -783,14 +783,14 @@ void pop_register_indirect(Cpu *cpu, Register source)
     case AB:
         set_data_bus(cpu, pop(&cpu->registers.reg_B));
         set_write_signal(cpu, true);
-        delay_for_n_clock_ticks(&cpu->clock, 1);
+        delay_for_n_clock_ticks(cpu->clock, 1);
         set_write_signal(cpu, false);
         set_address_bus(cpu, address + 1);
         set_data_bus(cpu, pop(&cpu->registers.reg_A));
         break;
     }
     set_write_signal(cpu, true);
-    delay_for_n_clock_ticks(&cpu->clock, 1);
+    delay_for_n_clock_ticks(cpu->clock, 1);
     set_write_signal(cpu, false);
 }
 
@@ -836,14 +836,14 @@ void peek_register_indirect(Cpu *cpu, Register source)
     case AB:
         set_data_bus(cpu, peek(&cpu->registers.reg_B));
         set_write_signal(cpu, true);
-        delay_for_n_clock_ticks(&cpu->clock, 1);
+        delay_for_n_clock_ticks(cpu->clock, 1);
         set_write_signal(cpu, false);
         set_address_bus(cpu, address + 1);
         set_data_bus(cpu, peek(&cpu->registers.reg_A));
         break;
     }
     set_write_signal(cpu, true);
-    delay_for_n_clock_ticks(&cpu->clock, 1);
+    delay_for_n_clock_ticks(cpu->clock, 1);
     set_write_signal(cpu, false);
 }
 
