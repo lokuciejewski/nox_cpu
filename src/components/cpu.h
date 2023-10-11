@@ -37,8 +37,8 @@ typedef struct Cpu
 
 Cpu *init_cpu(Clock *clock, address_bus_t *address_bus, data_bus_t *data_bus, bool *sig_write, bool *sig_irq);
 void print_cpu(Cpu *cpu);
-void run(Cpu *cpu, bool print_status, bool step_by_instruction);
-void execute_instruction(Cpu *cpu, data_bus_t instruction);
+void run(Cpu *cpu, bool print_status, bool step_by_instruction, bool exit_on_halt);
+void execute_instruction(Cpu *cpu, data_bus_t instruction, bool exit_on_halt);
 
 address_bus_t read_address(Cpu *cpu);
 data_bus_t read_data(Cpu *cpu);

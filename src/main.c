@@ -13,12 +13,11 @@ void *tick_function(void *vargrp)
     uint64_t n_of_ticks = 0;
     while (1)
     {
-        usleep(10000);
+        usleep(clock->delay);
         tick(clock);
         if (clock->phase)
         {
             n_of_ticks += 1;
-            // printf("\r%d", n_of_ticks);
             fflush(stdout);
         }
     }
@@ -29,6 +28,7 @@ struct arg_buses
     uint16_t *address_bus;
     uint8_t *data_bus;
     bool *sig_write;
+    char *memory_file_name;
 };
 
 void *output_function(void *vargrp)
@@ -57,7 +57,7 @@ void *rom_function(void *vargrp)
     uint16_t bus_value = 0;
     bool write_val = false;
 
-    FILE *fileptr = fopen("./memory.bin", "rb");
+    FILE *fileptr = fopen(buses->memory_file_name, "rb");
     uint8_t *memory = (uint8_t *)malloc(0xffff * sizeof(uint8_t));
     fread(memory, 0xffff, 1, fileptr);
     fclose(fileptr);
@@ -71,7 +71,6 @@ void *rom_function(void *vargrp)
 
             if (write_val)
             {
-                // printf("\nWRITE: 0x%02x to 0x%04x\n", *buses->data_bus, bus_value);
                 memory[bus_value] = *buses->data_bus;
             }
             else
@@ -82,29 +81,39 @@ void *rom_function(void *vargrp)
     }
 }
 
-int main()
+int main(int argc, char *argv[])
 {
-    Clock clock = {false};
     uint8_t data_bus = 0;
     uint16_t address_bus = 0;
     bool sig_write = false;
     bool sig_irq = false;
 
-    pthread_t clock_thread;
-    pthread_create(&clock_thread, NULL, tick_function, (void *)&clock);
+    if (argc != 3)
+    {
+        printf("Please provide a path to memory.bin file and clock delay"); // TODO add argument flags -m and -c
+        return 1;
+    }
+    else
+    {
+        struct arg_buses buses = {
+            &address_bus,
+            &data_bus,
+            &sig_write,
+            argv[1]};
+        pthread_t rom_thread;
+        pthread_create(&rom_thread, NULL, rom_function, (void *)&buses);
 
-    struct arg_buses buses = {
-        &address_bus,
-        &data_bus,
-        &sig_write};
-    pthread_t rom_thread;
-    pthread_create(&rom_thread, NULL, rom_function, (void *)&buses);
+        Clock clock = {false, strtoul(argv[2], NULL, 10)}; // TODO check if conversion ok
 
-    pthread_t output_thread;
-    pthread_create(&output_thread, NULL, output_function, (void *)&buses);
+        pthread_t clock_thread;
+        pthread_create(&clock_thread, NULL, tick_function, (void *)&clock);
 
-    Cpu *cpu = init_cpu(&clock, &address_bus, &data_bus, &sig_write, &sig_irq);
-    reset(cpu);
-    run(cpu, false, false);
-    return 0;
+        pthread_t output_thread;
+        pthread_create(&output_thread, NULL, output_function, (void *)&buses);
+
+        Cpu *cpu = init_cpu(&clock, &address_bus, &data_bus, &sig_write, &sig_irq);
+        reset(cpu);
+        run(cpu, false, false, true);
+        return 0;
+    }
 }

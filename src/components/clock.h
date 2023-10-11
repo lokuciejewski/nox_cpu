@@ -6,6 +6,7 @@
 typedef struct Clock
 {
     bool phase;
+    uint16_t delay;
 } Clock;
 
 void tick(Clock *clock);

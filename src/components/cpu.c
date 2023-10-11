@@ -35,7 +35,7 @@ void print_cpu(Cpu *cpu)
            cpu->overflow_flag, cpu->zero_flag, cpu->irq_flag, cpu->err_flag, cpu->registers.reg_EXIT_CODE);
 }
 
-void run(Cpu *cpu, bool print_status, bool step_by_instruction)
+void run(Cpu *cpu, bool print_status, bool step_by_instruction, bool exit_on_halt)
 {
     while (1)
     {
@@ -50,7 +50,7 @@ void run(Cpu *cpu, bool print_status, bool step_by_instruction)
             set_address_bus(cpu, cpu->program_counter);
             data_bus_t next_instruction = read_data(cpu);
             cpu->program_counter++;
-            execute_instruction(cpu, next_instruction);
+            execute_instruction(cpu, next_instruction, exit_on_halt);
             if (step_by_instruction)
             {
                 getchar();
@@ -59,7 +59,7 @@ void run(Cpu *cpu, bool print_status, bool step_by_instruction)
     }
 }
 
-void execute_instruction(Cpu *cpu, data_bus_t instruction)
+void execute_instruction(Cpu *cpu, data_bus_t instruction, bool exit_on_halt)
 {
     delay_for_n_clock_ticks(cpu->clock, DEFAULT_OP_DELAY_TICKS);
     switch (instruction)
@@ -467,6 +467,7 @@ void execute_instruction(Cpu *cpu, data_bus_t instruction)
         clear_flag(cpu, Zero);
         break;
     case HALT:
+        if (exit_on_halt) exit(0);
         cpu->program_counter--;
     default:
         noop(cpu);
