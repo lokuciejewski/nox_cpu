@@ -1,0 +1,44 @@
+// Calculate Fibonacci sequence and write values to dummy output buffer (address 0xe000)
+// 8 bit version
+
+> 0x1000
+start:
+    PUSH 0x01 A 
+    PUSH 0x01 B
+    ZERO LI
+fibo_loop:
+    CMP 0x01 LI
+    JZE b_loop
+    INC LI
+    ADD A B
+    PEEK A output
+    JOF end
+    JMP fibo_loop
+b_loop:
+    DEC LI
+    ADD B A
+    PEEK B output
+    JOF end
+    JMP fibo_loop
+end: 
+    HALT
+
+> 0xe000
+output:
+$ 0x0000
+
+// IRQ
+> 0xfff8 
+$ 0xff00
+
+// stack address
+> 0xfffa 
+$ 0x0000
+
+// stack size
+> 0xfffc 
+$ 0x0100
+
+// reset 
+> 0xfffe
+$ 0x1000
