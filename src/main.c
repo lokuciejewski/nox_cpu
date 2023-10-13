@@ -46,6 +46,7 @@ void *output_function(void *vargrp)
             if (write_val && bus_value == 0xe000)
             {
                 printf("%c", *buses->data_bus);
+                // printf("(%d)", *buses->data_bus);
             }
         }
     }

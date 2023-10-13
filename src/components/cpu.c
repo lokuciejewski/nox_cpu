@@ -106,6 +106,12 @@ void execute_instruction(Cpu *cpu, data_bus_t instruction, bool exit_on_halt)
     case PUSH_EXIT_CODE_B:
         push_register_to_register(cpu, EXIT_CODE, B);
         break;
+    case POP_A:
+        pop(&cpu->registers.reg_A);
+        break;
+    case POP_B:
+        pop(&cpu->registers.reg_B);
+        break;
     case POP_A_ABSOLUTE:
         pop_register_absolute(cpu, A, read_address(cpu));
         break;
@@ -117,6 +123,12 @@ void execute_instruction(Cpu *cpu, data_bus_t instruction, bool exit_on_halt)
         break;
     case POP_B_INDIRECT:
         pop_register_indirect(cpu, B);
+        break;
+    case POP_A_B:
+        pop_register_to_register(cpu, A, B);
+        break;
+    case POP_B_A:
+        pop_register_to_register(cpu, B, A);
         break;
     case POP_A_HI:
         pop_register_to_register(cpu, A, HI);
@@ -408,11 +420,17 @@ void execute_instruction(Cpu *cpu, data_bus_t instruction, bool exit_on_halt)
     case PUSH_A_STACK:
         push_register_to_stack(cpu, A, read_immediate(cpu));
         break;
+    case POP_A_STACK:
+        pop_register_to_stack(cpu, A, read_immediate(cpu));
+        break;
     case POP_STACK_A:
         pop_register_from_stack(cpu, A, read_immediate(cpu));
         break;
     case PUSH_B_STACK:
         push_register_to_stack(cpu, B, read_immediate(cpu));
+        break;
+    case POP_B_STACK:
+        pop_register_to_stack(cpu, B, read_immediate(cpu));
         break;
     case POP_STACK_B:
         pop_register_from_stack(cpu, B, read_immediate(cpu));
@@ -467,7 +485,8 @@ void execute_instruction(Cpu *cpu, data_bus_t instruction, bool exit_on_halt)
         clear_flag(cpu, Zero);
         break;
     case HALT:
-        if (exit_on_halt) exit(0);
+        if (exit_on_halt)
+            exit(0);
         cpu->program_counter--;
     default:
         noop(cpu);
@@ -630,16 +649,60 @@ void push_register_to_register(Cpu *cpu, Register source, Register target)
     switch (source)
     {
     case A:
-        push(&cpu->registers.reg_B, peek(&cpu->registers.reg_A));
+        switch (target)
+        {
+        case B:
+            push(&cpu->registers.reg_B, peek(&cpu->registers.reg_A));
+            break;
+        case HI:
+            cpu->registers.reg_HI = peek(&cpu->registers.reg_A);
+            break;
+        case LI:
+            cpu->registers.reg_LI = peek(&cpu->registers.reg_A);
+            break;
+        }
         break;
     case B:
-        push(&cpu->registers.reg_A, peek(&cpu->registers.reg_B));
+        switch (target)
+        {
+        case A:
+            push(&cpu->registers.reg_A, peek(&cpu->registers.reg_B));
+            break;
+        case HI:
+            cpu->registers.reg_HI = peek(&cpu->registers.reg_B);
+            break;
+        case LI:
+            cpu->registers.reg_LI = peek(&cpu->registers.reg_B);
+            break;
+        }
         break;
     case HI:
-        cpu->registers.reg_HI = peek(&cpu->registers.reg_A);
+        switch (target)
+        {
+        case A:
+            push(&cpu->registers.reg_A, cpu->registers.reg_HI);
+            break;
+        case B:
+            push(&cpu->registers.reg_B, cpu->registers.reg_HI);
+            break;
+        case LI:
+            cpu->registers.reg_LI = cpu->registers.reg_HI;
+            break;
+        }
         break;
     case LI:
-        cpu->registers.reg_LI = peek(&cpu->registers.reg_B);
+        switch (target)
+        {
+        case A:
+            push(&cpu->registers.reg_A, cpu->registers.reg_LI);
+            break;
+        case B:
+            push(&cpu->registers.reg_B, cpu->registers.reg_LI);
+            break;
+        case LI:
+            cpu->registers.reg_HI = cpu->registers.reg_LI;
+            break;
+        }
         break;
     case EXIT_CODE:
         switch (target)
@@ -651,6 +714,7 @@ void push_register_to_register(Cpu *cpu, Register source, Register target)
             cpu->registers.reg_EXIT_CODE = peek(&cpu->registers.reg_B) & 0b00001111;
             break;
         }
+        break;
     }
     delay_for_n_clock_ticks(cpu->clock, 1);
 }
@@ -729,6 +793,9 @@ void pop_register_to_register(Cpu *cpu, Register source, Register target)
     case A:
         switch (target)
         {
+        case B:
+            push(&cpu->registers.reg_B, pop(&cpu->registers.reg_A));
+            break;
         case HI:
             cpu->registers.reg_HI = pop(&cpu->registers.reg_A);
             break;
@@ -740,6 +807,9 @@ void pop_register_to_register(Cpu *cpu, Register source, Register target)
     case B:
         switch (target)
         {
+        case A:
+            push(&cpu->registers.reg_A, pop(&cpu->registers.reg_B));
+            break;
         case HI:
             cpu->registers.reg_HI = pop(&cpu->registers.reg_B);
             break;
@@ -749,14 +819,32 @@ void pop_register_to_register(Cpu *cpu, Register source, Register target)
         }
         break;
     case HI:
-    case LI:
-        data_bus_t temp = cpu->registers.reg_HI;
-        cpu->registers.reg_HI = cpu->registers.reg_LI;
-        cpu->registers.reg_LI = temp;
+        switch (target)
+        {
+        case A:
+            push(&cpu->registers.reg_A, cpu->registers.reg_HI);
+            break;
+        case B:
+            push(&cpu->registers.reg_B, cpu->registers.reg_HI);
+            break;
+        case LI:
+            cpu->registers.reg_LI = cpu->registers.reg_HI;
+            break;
+        }
         break;
-    case AB:
-        cpu->registers.reg_HI = pop(&cpu->registers.reg_A);
-        cpu->registers.reg_LI = pop(&cpu->registers.reg_B);
+    case LI:
+        switch (target)
+        {
+        case A:
+            push(&cpu->registers.reg_A, cpu->registers.reg_LI);
+            break;
+        case B:
+            push(&cpu->registers.reg_B, cpu->registers.reg_LI);
+            break;
+        case LI:
+            cpu->registers.reg_HI = cpu->registers.reg_LI;
+            break;
+        }
         break;
     case EXIT_CODE:
         switch (target)
@@ -768,7 +856,6 @@ void pop_register_to_register(Cpu *cpu, Register source, Register target)
             cpu->registers.reg_EXIT_CODE = pop(&cpu->registers.reg_B) & 0b00001111;
             break;
         }
-    default:
         break;
     }
     delay_for_n_clock_ticks(cpu->clock, 1);
@@ -1411,6 +1498,34 @@ void pop_ab_to_irq_address(Cpu *cpu)
 }
 
 void push_register_to_stack(Cpu *cpu, Register target, data_bus_t n_of_values)
+{
+    switch (target)
+    {
+    case A:
+        while (n_of_values != 0)
+        {
+            push_value_to_stack(cpu, peek(&cpu->registers.reg_A));
+            n_of_values--;
+        }
+        break;
+    case B:
+        while (n_of_values != 0)
+        {
+            push_value_to_stack(cpu, peek(&cpu->registers.reg_B));
+            n_of_values--;
+        }
+        break;
+    case HI:
+        push_value_to_stack(cpu, cpu->registers.reg_HI);
+        break;
+    case LI:
+        push_value_to_stack(cpu, cpu->registers.reg_LI);
+        break;
+    }
+    delay_for_n_clock_ticks(cpu->clock, 1);
+}
+
+void pop_register_to_stack(Cpu *cpu, Register target, data_bus_t n_of_values)
 {
     switch (target)
     {

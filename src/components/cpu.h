@@ -130,6 +130,7 @@ void pop_ab_to_stack_size(Cpu *cpu);
 void pop_ab_to_irq_address(Cpu *cpu);
 
 void push_register_to_stack(Cpu *cpu, Register target, data_bus_t n_of_values);
+void pop_register_to_stack(Cpu *cpu, Register target, data_bus_t n_of_values);
 void pop_register_from_stack(Cpu *cpu, Register target, data_bus_t n_of_values);
 
 void call(Cpu *cpu, address_bus_t address);

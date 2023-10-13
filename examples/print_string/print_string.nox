@@ -1,7 +1,7 @@
 
 > 0x1000
 start:
-    push 0xa000 HLI
+    push *text HLI
 print_loop:
     push &HLI A
     jze end
