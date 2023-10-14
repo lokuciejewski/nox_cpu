@@ -65,7 +65,7 @@ tenths_done:
     POP A output
     POP A output
 
-    PUSH 0x20 A
+    PUSH ' ' A
     POP A output
 
     POP S A 0x1

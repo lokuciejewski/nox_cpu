@@ -1,0 +1,104 @@
+// Example of returning an exit code
+
+> 0x1000
+call_1:
+    call func_ok_1
+    push EX A
+    cmp 0x1 A 
+    jze print_code_1
+    cmp 0x2 A 
+    jze print_code_2
+    cmp 0x3 A 
+    jze print_code_3
+    jmp end
+call_2:
+    call func_ok_2
+    push EX A
+    cmp 0x1 A 
+    jze print_code_1
+    cmp 0x2 A 
+    jze print_code_2
+    cmp 0x3 A 
+    jze print_code_3
+    jmp end
+call_3:
+    call func_ok_3
+    push EX A
+    cmp 0x1 A 
+    jze print_code_1
+    cmp 0x2 A 
+    jze print_code_2
+    cmp 0x3 A 
+    jze print_code_3
+    jmp end
+
+end:
+    halt
+
+
+print_code_1:
+    push *text_1 HLI
+    call print_text
+    jmp call_2
+
+
+print_code_2:
+    push *text_2 HLI
+    call print_text
+    jmp call_3
+
+
+print_code_3:
+    push *text_3 HLI
+    call print_text
+    jmp end
+
+
+func_ok_1:
+    ret ok 0x1
+
+func_ok_2:
+    ret ok 0x2
+
+func_ok_3:
+    ret ok 0x3
+
+
+print_text:
+    push &HLI A
+    jze print_text_end
+    inc HLI
+    pop A output
+    jmp print_text
+print_text_end:
+    ret ok
+
+text_1:
+$ "function returned exit code 1 " 0x0
+
+text_2:
+$ "function returned exit code 2 " 0x0
+
+text_3:
+$ "function returned exit code 3 " 0x0
+
+
+> 0xe000
+output:
+$ 0x0000
+
+// IRQ
+> 0xfff8 
+$ 0xff00
+
+// stack address
+> 0xfffa 
+$ 0x0000
+
+// stack size
+> 0xfffc 
+$ 0x0100
+
+// reset 
+> 0xfffe
+$ 0x1000

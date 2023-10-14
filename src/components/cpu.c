@@ -708,10 +708,10 @@ void push_register_to_register(Cpu *cpu, Register source, Register target)
         switch (target)
         {
         case A:
-            cpu->registers.reg_EXIT_CODE = peek(&cpu->registers.reg_A) & 0b00001111;
+            push(&cpu->registers.reg_A, cpu->registers.reg_EXIT_CODE  & 0b00001111);
             break;
         case B:
-            cpu->registers.reg_EXIT_CODE = peek(&cpu->registers.reg_B) & 0b00001111;
+            push(&cpu->registers.reg_B, cpu->registers.reg_EXIT_CODE  & 0b00001111);
             break;
         }
         break;
@@ -1649,6 +1649,17 @@ void return_ok(Cpu *cpu)
 
 void return_ok_with_code(Cpu *cpu, uint8_t exit_code)
 {
+   // Recreate old stack
+    cpu->stack_address = 0; // to allow popping from the previous stack
+    
+    data_bus_t stack_address_lsb = pop_value_from_stack(cpu);
+    data_bus_t stack_address_msb = pop_value_from_stack(cpu);
+    cpu->stack_address = from_2_data_bus_t(stack_address_msb, stack_address_lsb);
+
+    data_bus_t stack_size_lsb = pop_value_from_stack(cpu);
+    data_bus_t stack_size_msb = pop_value_from_stack(cpu);
+    cpu->stack_size = from_2_data_bus_t(stack_size_msb, stack_size_lsb);
+
     // Pop program_counter
     data_bus_t program_counter_lsb = pop_value_from_stack(cpu);
     data_bus_t program_counter_msb = pop_value_from_stack(cpu);
@@ -1672,6 +1683,17 @@ void return_ok_with_code(Cpu *cpu, uint8_t exit_code)
 
 void return_err(Cpu *cpu)
 {
+    // Recreate old stack
+    cpu->stack_address = 0; // to allow popping from the previous stack
+
+    data_bus_t stack_address_lsb = pop_value_from_stack(cpu);
+    data_bus_t stack_address_msb = pop_value_from_stack(cpu);
+    cpu->stack_address = from_2_data_bus_t(stack_address_msb, stack_address_lsb);
+
+    data_bus_t stack_size_lsb = pop_value_from_stack(cpu);
+    data_bus_t stack_size_msb = pop_value_from_stack(cpu);
+    cpu->stack_size = from_2_data_bus_t(stack_size_msb, stack_size_lsb);
+
     // Pop program_counter
     data_bus_t program_counter_lsb = pop_value_from_stack(cpu);
     data_bus_t program_counter_msb = pop_value_from_stack(cpu);
@@ -1695,6 +1717,17 @@ void return_err(Cpu *cpu)
 
 void return_err_with_code(Cpu *cpu, uint8_t exit_code)
 {
+    // Recreate old stack
+    cpu->stack_address = 0; // to allow popping from the previous stack
+    
+    data_bus_t stack_address_lsb = pop_value_from_stack(cpu);
+    data_bus_t stack_address_msb = pop_value_from_stack(cpu);
+    cpu->stack_address = from_2_data_bus_t(stack_address_msb, stack_address_lsb);
+
+    data_bus_t stack_size_lsb = pop_value_from_stack(cpu);
+    data_bus_t stack_size_msb = pop_value_from_stack(cpu);
+    cpu->stack_size = from_2_data_bus_t(stack_size_msb, stack_size_lsb);
+
     // Pop program_counter
     data_bus_t program_counter_lsb = pop_value_from_stack(cpu);
     data_bus_t program_counter_msb = pop_value_from_stack(cpu);

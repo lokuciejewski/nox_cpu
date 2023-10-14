@@ -1,0 +1,59 @@
+// This example shows how to use return err/ok
+
+> 0x1000
+    call func_ok
+    jer end
+    push *text_ok HLI
+    call print_text
+    call func_err
+    jer error_returned
+end:
+    halt
+
+error_returned:
+    push *text_err HLI
+    call print_text
+    halt
+
+func_err:
+    ret err
+
+func_ok:
+    ret ok
+
+
+print_text:
+    push &HLI A
+    jze print_text_end
+    inc HLI
+    pop A output
+    jmp print_text
+print_text_end:
+    ret ok
+
+
+text_ok:
+$ "function returned OK " 0x0
+
+text_err:
+$ "function returned ERR " 0x0
+
+> 0xe000
+output:
+$ 0x0000
+
+// IRQ
+> 0xfff8 
+$ 0xff00
+
+// stack address
+> 0xfffa 
+$ 0x0000
+
+// stack size
+> 0xfffc 
+$ 0x0100
+
+// reset 
+> 0xfffe
+$ 0x1000
