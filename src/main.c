@@ -1,6 +1,7 @@
 #include "stdio.h"
 #include "unistd.h"
 #include "pthread.h"
+#include "string.h"
 
 #include "components.h"
 #include "clock.h"
@@ -89,32 +90,57 @@ int main(int argc, char *argv[])
     bool sig_write = false;
     bool sig_irq = false;
 
-    if (argc != 3)
+    char *memory_file_path, *clock_delay, *output_address, *current_arg;
+
+    if (argc < 3)
     {
-        printf("Please provide a path to memory.bin file and clock delay"); // TODO add argument flags -m and -c
-        return 1;
+        printf("Provide memory file path `-m <file path>` and a clock delay (useconds) `-d <delay>`");
+        exit(1);
     }
-    else
+
+    for (int arg = 1; arg < argc; arg++)
     {
-        struct arg_buses buses = {
-            &address_bus,
-            &data_bus,
-            &sig_write,
-            argv[1]};
-        pthread_t rom_thread;
-        pthread_create(&rom_thread, NULL, rom_function, (void *)&buses);
-
-        Clock clock = {false, strtoul(argv[2], NULL, 10)}; // TODO check if conversion ok
-
-        pthread_t clock_thread;
-        pthread_create(&clock_thread, NULL, tick_function, (void *)&clock);
-
-        pthread_t output_thread;
-        pthread_create(&output_thread, NULL, output_function, (void *)&buses);
-
-        Cpu *cpu = init_cpu(&clock, &address_bus, &data_bus, &sig_write, &sig_irq);
-        reset(cpu);
-        run(cpu, false, false, true);
-        return 0;
+        current_arg = argv[arg];
+        if (strcmp(current_arg, "-m") == 0 && arg < argc)
+        {
+            arg++;
+            memory_file_path = argv[arg];
+        }
+        else if (strcmp(current_arg, "-d") == 0 && arg < argc)
+        {
+            arg++;
+            clock_delay = argv[arg];
+        }
+        else if (strcmp(current_arg, "-o") == 0 && arg < argc)
+        {
+            arg++;
+            output_address = argv[arg];
+        }
+        else
+        {
+            printf("Invalid argument: %s\n", current_arg);
+        }
     }
+
+    struct arg_buses buses = {
+        &address_bus,
+        &data_bus,
+        &sig_write,
+        memory_file_path};
+
+    pthread_t rom_thread;
+    pthread_create(&rom_thread, NULL, rom_function, (void *)&buses);
+
+    Clock clock = {false, strtoul(clock_delay, NULL, 10)}; // TODO check if conversion ok
+
+    pthread_t clock_thread;
+    pthread_create(&clock_thread, NULL, tick_function, (void *)&clock);
+
+    pthread_t output_thread;
+    pthread_create(&output_thread, NULL, output_function, (void *)&buses);
+
+    Cpu *cpu = init_cpu(&clock, &address_bus, &data_bus, &sig_write, &sig_irq);
+    reset(cpu);
+    run(cpu, false, false, true);
+    return 0;
 }
