@@ -8,6 +8,8 @@
 #include "cpu.h"
 #include "opcodes.h"
 
+#define STDOUT_DISABLED 0xffff
+
 void *tick_function(void *vargrp)
 {
     Clock *clock = (Clock *)vargrp;
@@ -30,6 +32,7 @@ struct arg_buses
     uint8_t *data_bus;
     bool *sig_write;
     char *memory_file_name;
+    uint16_t stdout_address;
 };
 
 void *output_function(void *vargrp)
@@ -44,10 +47,9 @@ void *output_function(void *vargrp)
             bus_value = *buses->address_bus;
             write_val = *buses->sig_write;
 
-            if (write_val && bus_value == 0xe000)
+            if (write_val && bus_value == buses->stdout_address)
             {
                 printf("%c", *buses->data_bus);
-                // printf("(%d)", *buses->data_bus);
             }
         }
     }
@@ -90,7 +92,7 @@ int main(int argc, char *argv[])
     bool sig_write = false;
     bool sig_irq = false;
 
-    char *memory_file_path, *clock_delay, *output_address, *current_arg;
+    char *memory_file_path, *clock_delay, *stdout_address, *current_arg;
 
     if (argc < 3)
     {
@@ -114,7 +116,7 @@ int main(int argc, char *argv[])
         else if (strcmp(current_arg, "-o") == 0 && arg < argc)
         {
             arg++;
-            output_address = argv[arg];
+            stdout_address = argv[arg];
         }
         else
         {
@@ -122,22 +124,33 @@ int main(int argc, char *argv[])
         }
     }
 
+    uint16_t output_address = STDOUT_DISABLED;
+    if (stdout_address != NULL)
+    {
+        output_address = strtoul(stdout_address, NULL, 16);
+    }
+
     struct arg_buses buses = {
         &address_bus,
         &data_bus,
         &sig_write,
-        memory_file_path};
+        memory_file_path,
+        output_address,
+    };
 
     pthread_t rom_thread;
     pthread_create(&rom_thread, NULL, rom_function, (void *)&buses);
 
-    Clock clock = {false, strtoul(clock_delay, NULL, 10)}; // TODO check if conversion ok
+    Clock clock = {false, strtoul(clock_delay, NULL, 10)};
 
     pthread_t clock_thread;
     pthread_create(&clock_thread, NULL, tick_function, (void *)&clock);
 
-    pthread_t output_thread;
-    pthread_create(&output_thread, NULL, output_function, (void *)&buses);
+    if (output_address != STDOUT_DISABLED)
+    {
+        pthread_t output_thread;
+        pthread_create(&output_thread, NULL, output_function, (void *)&buses);
+    }
 
     Cpu *cpu = init_cpu(&clock, &address_bus, &data_bus, &sig_write, &sig_irq);
     reset(cpu);
