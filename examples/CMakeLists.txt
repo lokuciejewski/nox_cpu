@@ -11,7 +11,7 @@ add_custom_command(TARGET examples_print_string
     POST_BUILD
     DEPENDS ${PROJECT_EXAMPLES_DIR}/memory.bin
     COMMAND echo "++++ CPU OUTPUT ++++"
-    COMMAND nox-cpu ${PROJECT_EXAMPLES_DIR}/memory.bin 10
+    COMMAND nox-cpu -m ${PROJECT_EXAMPLES_DIR}/memory.bin -d 10
     COMMAND echo -e "\\n++++ CPU OUTPUT END ++++"
     VERBATIM
 )
@@ -29,7 +29,7 @@ add_custom_command(TARGET examples_fibonacci
     POST_BUILD
     DEPENDS ${PROJECT_EXAMPLES_DIR}/memory.bin
     COMMAND echo "++++ CPU OUTPUT ++++"
-    COMMAND nox-cpu ${PROJECT_EXAMPLES_DIR}/memory.bin 10
+    COMMAND nox-cpu -m ${PROJECT_EXAMPLES_DIR}/memory.bin -d 10
     COMMAND echo -e "\\n++++ CPU OUTPUT END ++++"
     VERBATIM
 )
@@ -47,7 +47,7 @@ add_custom_command(TARGET examples_return_ok_err
     POST_BUILD
     DEPENDS ${PROJECT_EXAMPLES_DIR}/memory.bin
     COMMAND echo "++++ CPU OUTPUT ++++"
-    COMMAND nox-cpu ${PROJECT_EXAMPLES_DIR}/memory.bin 10
+    COMMAND nox-cpu -m ${PROJECT_EXAMPLES_DIR}/memory.bin -d 10
     COMMAND echo -e "\\n++++ CPU OUTPUT END ++++"
     VERBATIM
 )
@@ -64,7 +64,7 @@ add_custom_command(TARGET examples_return_exit_code
     POST_BUILD
     DEPENDS ${PROJECT_EXAMPLES_DIR}/memory.bin
     COMMAND echo "++++ CPU OUTPUT ++++"
-    COMMAND nox-cpu ${PROJECT_EXAMPLES_DIR}/memory.bin 10
+    COMMAND nox-cpu -m ${PROJECT_EXAMPLES_DIR}/memory.bin -d 10
     COMMAND echo -e "\\n++++ CPU OUTPUT END ++++"
     VERBATIM
 )
