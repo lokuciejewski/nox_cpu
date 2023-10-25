@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.27)
 
-project(nox-cpu)
+project(nox-cpu VERSION 0.2.0)
 
 set(PROJECT_EXAMPLES_DIR ${CMAKE_SOURCE_DIR}/examples/)
 
@@ -14,8 +14,7 @@ include_directories(src/ src/components/)
 add_executable(nox-cpu src/main.c ${SOURCE_FILES})
 
 add_custom_target(nox-asm
-    # COMMAND cargo install nox-asm --git https://github.com/lokuciejewski/nox_asm
-    COMMAND cargo install --path /home/anemiq/Projects/nox_asm
+    COMMAND cargo install nox-asm --git https://github.com/lokuciejewski/nox_asm=${CMAKE_PROJECT_VERSION}
 )
 
 add_subdirectory(examples)
