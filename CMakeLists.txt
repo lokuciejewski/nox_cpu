@@ -4,7 +4,10 @@ project(nox-cpu)
 
 set(PROJECT_EXAMPLES_DIR ${CMAKE_SOURCE_DIR}/examples/)
 
-set(SOURCE_FILES src/components/clock.c src/components/cpu.c src/components/stack.c)
+# All cpu operations - rebuild CMakeLists if the list of files change
+aux_source_directory(src/components/cpu_ops CPU_OPS)
+
+set(SOURCE_FILES src/components/clock.c src/components/cpu.c src/components/stack.c ${CPU_OPS})
 
 include_directories(src/ src/components/)
 
